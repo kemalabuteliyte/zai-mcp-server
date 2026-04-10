@@ -62,7 +62,7 @@ const MessageSchema = z.object({
 
 const server = new McpServer({
   name: "zai-mcp-server",
-  version: "1.0.0",
+  version: "1.1.0",
 });
 
 // ── Tool 1: zai_chat_complete ───────────────────────────────────────────────

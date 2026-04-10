@@ -1,6 +1,6 @@
 {
   "name": "zai-mcp-server",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Token-efficient coding plugin for Claude. Delegates code generation, review, testing, and refactoring to Z.ai non-agentic models (GLM-4, CodeGeeX) via MCP, saving Claude tokens on heavy code tasks.",
   "author": {
     "name": "kemalabuteliyte",
