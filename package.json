@@ -1,0 +1,26 @@
+{
+  "name": "zai-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP server for Z.ai API",
+  "main": "dist/index.js",
+  "bin": {
+    "zai-mcp-server": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "keywords": ["mcp", "zai", "ai"],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "openai": "^6.34.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.2",
+    "typescript": "^6.0.2"
+  }
+}
