@@ -13,7 +13,7 @@ const ZAI_BASE_URL = "https://api.z.ai/api/paas/v4";
 const ZAI_CODING_BASE_URL = "https://api.z.ai/api/coding/paas/v4";
 const config = {
     apiKey: process.env.ZAI_API_KEY ?? "",
-    defaultModel: "gpt-4o",
+    defaultModel: "glm-4-plus",
     temperature: 0.7,
     maxTokens: 4096,
 };
@@ -25,13 +25,21 @@ function getClient(baseURL = ZAI_BASE_URL) {
 }
 // ── Pricing table (USD per 1K tokens) ───────────────────────────────────────
 const PRICING = {
+    // GLM models (non-agentic, token-efficient)
+    "glm-4-plus": { input: 0.0005, output: 0.0005 },
+    "glm-4-flash": { input: 0.0001, output: 0.0001 },
+    "glm-4-flashx": { input: 0.0001, output: 0.0001 },
+    "glm-4-long": { input: 0.0001, output: 0.0001 },
+    "glm-4": { input: 0.0003, output: 0.0003 },
+    "glm-4-air": { input: 0.0002, output: 0.0002 },
+    "glm-4-airx": { input: 0.0002, output: 0.0002 },
+    "glm-4-0520": { input: 0.0005, output: 0.0005 },
+    "codegeex-4": { input: 0.0001, output: 0.0001 },
+    // OpenAI-compatible models
     "gpt-4o": { input: 0.0025, output: 0.01 },
     "gpt-4o-mini": { input: 0.00015, output: 0.0006 },
     "gpt-4-turbo": { input: 0.01, output: 0.03 },
-    "gpt-4": { input: 0.03, output: 0.06 },
     "gpt-3.5-turbo": { input: 0.0005, output: 0.0015 },
-    "o1": { input: 0.015, output: 0.06 },
-    "o1-mini": { input: 0.003, output: 0.012 },
 };
 // ── Shared Zod shapes ───────────────────────────────────────────────────────
 const MessageSchema = zod_1.z.object({

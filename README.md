@@ -1,32 +1,31 @@
 # zai-mcp-server
 
-An MCP (Model Context Protocol) server that connects any MCP-compatible AI client to the **Z.ai API** — giving coding agents like Claude Code direct access to Z.ai's chat and code completion models.
+A Claude Code plugin that makes your coding agent **token-efficient** by delegating code generation, review, testing, and refactoring to **Z.ai non-agentic models** (GLM-4, CodeGeeX) via MCP.
 
 ## Why?
 
-Coding agents work best when they can call different LLMs for different jobs. This server lets your agent:
+Claude is great at reasoning but expensive when writing large amounts of code. This plugin offloads the heavy lifting:
 
-- **Route code tasks** to Z.ai's coding-optimized endpoint for better results on generation, refactoring, and debugging
-- **Compare models** by listing what's available and estimating costs before making calls
-- **Stay in flow** — no copy-pasting between tools; the agent calls Z.ai directly through MCP
+- **Save tokens** — Code generation, test writing, and boilerplate go to cheap GLM/CodeGeeX models instead of consuming Claude context
+- **Non-agentic models only** — Uses glm-4-plus, glm-4-flash, codegeex-4 — fast, cheap, no reasoning overhead
+- **Claude stays in control** — Claude reads, plans, and orchestrates; Z.ai writes the code
+- **5 skills + 2 agents** — Ready-to-use workflows for generate, review, explain, refactor, and test
 
-## Install in Claude Code (One Click)
+## Install as Claude Code Plugin (Marketplace)
 
-Open Claude Code **Settings > MCP Servers > Add Custom Server**, paste this URL:
+Open Claude Code **Settings > Plugins > Add Marketplace**, paste:
 
 ```
-https://github.com/kemalabuteliyte/zai-mcp-server
+kemalabuteliyte/zai-mcp-server
 ```
 
-Then set the `ZAI_API_KEY` environment variable when prompted.
+Click **Sync**, then install the plugin from the marketplace. Set your `ZAI_API_KEY` when prompted.
 
-### Or via CLI
+### Or via CLI (MCP server only)
 
 ```bash
 claude mcp add zai-mcp-server -- npx -y github:kemalabuteliyte/zai-mcp-server
 ```
-
-Then add your API key:
 
 ```bash
 export ZAI_API_KEY="your-z-ai-api-key"
@@ -61,6 +60,61 @@ Add to your `~/.claude/settings.json`:
 | `zai_set_config` | Update runtime config (API key, default model, temperature, max tokens) |
 | `zai_estimate_cost` | Estimate cost for a given model and token count |
 
+## Skills
+
+Skills are invoked with `/zai-mcp-server:<skill>` or triggered automatically when Claude detects a matching request.
+
+| Skill | Trigger | Model Used |
+|-------|---------|------------|
+| `zai-generate` | "generate code", "write a function", "implement this" | `codegeex-4` / `glm-4-plus` |
+| `zai-review` | "review code", "find bugs", "audit this" | `glm-4-plus` |
+| `zai-explain` | "explain this code", "what does this do" | `glm-4-flash` / `glm-4-plus` |
+| `zai-refactor` | "refactor this", "clean up", "simplify" | `glm-4-plus` |
+| `zai-test` | "write tests", "add test coverage" | `codegeex-4` / `glm-4-plus` |
+
+### How skills save tokens
+
+Instead of Claude generating code in its response (expensive), skills instruct Claude to:
+1. Read the relevant code locally (cheap — file reads don't cost output tokens)
+2. Send a targeted prompt to Z.ai via MCP tool call (cheap — GLM models cost ~10-50x less)
+3. Apply the Z.ai response directly to files (cheap — Edit/Write tools, minimal Claude output)
+
+## Agents
+
+| Agent | Purpose | Model |
+|-------|---------|-------|
+| `zai-coder` | End-to-end feature implementation. Claude plans, Z.ai writes all code. | sonnet (orchestrator) + glm-4-plus/codegeex-4 (code) |
+| `zai-reviewer` | Code review and security audit. Reads locally, analyzes via Z.ai. | haiku (orchestrator) + glm-4-plus (analysis) |
+
+### zai-coder agent
+
+Use for substantial coding tasks — multi-file features, scaffolding, migrations. The agent:
+- Reads and understands the codebase (using Claude)
+- Generates ALL code via `zai_code_complete` (using Z.ai GLM/CodeGeeX)
+- Applies and verifies the results
+- Never writes code in its own response
+
+### zai-reviewer agent
+
+Use for code review, PR review, security audit. The agent:
+- Gathers diffs and reads changed files locally
+- Sends code to `zai_chat_complete` with a structured review prompt
+- Presents findings sorted by severity (CRITICAL > WARNING > INFO)
+
+## Model Selection Guide
+
+All models are **non-agentic** — no chain-of-thought overhead, no tool-use loops, just fast completion.
+
+| Model | Best for | Cost | Speed |
+|-------|----------|------|-------|
+| `codegeex-4` | Code generation, tests, boilerplate | Cheapest | Fast |
+| `glm-4-flash` | Quick explanations, one-liners, small edits | Very cheap | Fastest |
+| `glm-4-air` | General tasks, balanced quality/cost | Cheap | Fast |
+| `glm-4-plus` | Complex logic, review, refactoring, architecture | Moderate | Medium |
+| `glm-4-long` | Large file generation, long context | Cheap | Medium |
+
+Default model: `glm-4-plus`. Override per-call or globally via `zai_set_config`.
+
 ## Tool Details
 
 ### zai_chat_complete
@@ -73,7 +127,7 @@ Send a chat completion request to Z.ai.
     { "role": "system", "content": "You are a helpful assistant." },
     { "role": "user", "content": "Explain closures in JavaScript." }
   ],
-  "model": "gpt-4o",
+  "model": "glm-4-plus",
   "temperature": 0.7,
   "max_tokens": 2048
 }
@@ -89,7 +143,7 @@ Optimized for code generation. Uses Z.ai's dedicated coding endpoint (`/api/codi
     { "role": "user", "content": "Write a binary search function" }
   ],
   "language": "typescript",
-  "model": "gpt-4o"
+  "model": "glm-4-plus"
 }
 ```
 
@@ -108,7 +162,7 @@ Update any combination of runtime settings without restarting the server:
 ```json
 {
   "api_key": "new-key",
-  "default_model": "gpt-4o-mini",
+  "default_model": "glm-4-flash",
   "temperature": 0.5,
   "max_tokens": 8192
 }
@@ -120,7 +174,7 @@ Estimate the cost before making a call:
 
 ```json
 {
-  "model": "gpt-4o",
+  "model": "glm-4-plus",
   "input_tokens": 1000,
   "output_tokens": 500
 }
@@ -128,17 +182,25 @@ Estimate the cost before making a call:
 
 Returns a breakdown of input/output/total cost in USD.
 
-## Usage with Coding Agents
+## Usage Examples
 
-Once installed, your coding agent can use Z.ai tools naturally. Example prompts:
+Once installed, Claude automatically uses Z.ai via skills and agents:
 
-> "Use zai_code_complete to generate a React hook for debouncing, in TypeScript."
+```
+/zai-mcp-server:zai-generate  → "Write a REST API for user management in Express"
+/zai-mcp-server:zai-review    → "Review src/auth.ts for security issues"
+/zai-mcp-server:zai-test      → "Write tests for the UserService class"
+/zai-mcp-server:zai-refactor  → "Refactor this to reduce duplication"
+/zai-mcp-server:zai-explain   → "Explain how the caching layer works"
+```
 
-> "List available Z.ai models and estimate the cost of processing 10K input tokens + 2K output tokens with gpt-4o."
+Or use agents for larger tasks:
 
-> "Use zai_chat_complete to review this function for security issues."
+> "Use the zai-coder agent to implement a full CRUD API for products with validation and tests."
 
-The agent will automatically discover the tools via MCP and call them as needed.
+> "Use the zai-reviewer agent to review all changes on this branch."
+
+Skills also trigger automatically when Claude detects matching requests — no slash command needed.
 
 ## Build from Source
 
