@@ -1,0 +1,13 @@
+{
+  "name": "zai-mcp-server",
+  "version": "1.0.0",
+  "description": "Connect Claude to Z.ai API for chat completion, code generation, model listing, streaming, and cost estimation.",
+  "author": {
+    "name": "kemalabuteliyte",
+    "url": "https://github.com/kemalabuteliyte"
+  },
+  "homepage": "https://github.com/kemalabuteliyte/zai-mcp-server",
+  "repository": "https://github.com/kemalabuteliyte/zai-mcp-server",
+  "license": "ISC",
+  "keywords": ["mcp", "zai", "ai", "code-completion", "chat"]
+}

@@ -1,0 +1,9 @@
+{
+  "zai-mcp-server": {
+    "command": "npx",
+    "args": ["-y", "github:kemalabuteliyte/zai-mcp-server"],
+    "env": {
+      "ZAI_API_KEY": ""
+    }
+  }
+}
