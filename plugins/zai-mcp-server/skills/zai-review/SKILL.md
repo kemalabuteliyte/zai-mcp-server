@@ -1,10 +1,10 @@
 ---
 name: zai-review
-description: This skill should be used when the user asks to "review code", "check this code", "find bugs", "code review", "audit this", "is this code correct", or wants code quality analysis delegated to Z.ai. Saves Claude tokens by offloading review to GLM models.
-version: 1.0.0
+description: This skill should be used when the user asks to "review code", "check this code", "find bugs", "code review", "audit this", "is this code correct", or wants code quality analysis delegated to Z.ai. Saves Claude tokens by offloading review to Z.ai models.
+version: 1.2.0
 ---
 
-You are delegating code review to the Z.ai API to save tokens. Use glm-4-plus for thorough analysis without consuming Claude's context window on review reasoning.
+You are delegating code review to the Z.ai API to save tokens. Use `glm-4.5-air` for straightforward reviews or `glm-4.5` for deep security/logic analysis.
 
 ## When to use
 
@@ -22,9 +22,9 @@ You are delegating code review to the Z.ai API to save tokens. Use glm-4-plus fo
    - The language and framework context
 3. Call the `zai_chat_complete` MCP tool:
    - `messages`: System message with review instructions + user message with the code
-   - `model`: `"glm-4-plus"` (best reasoning for review tasks)
+   - `model`: `"glm-4.5-air"` for general review, `"glm-4.5"` for security/deep logic audit
    - `temperature`: `0.2` (deterministic, factual analysis)
-   - `max_tokens`: `2000`
+   - `max_tokens`: `4096`
 4. Parse the review response and present findings to the user as a structured list.
 5. If the user wants fixes applied, use the `zai-generate` skill or apply them directly.
 
@@ -55,9 +55,9 @@ User: "Review this auth middleware for security issues"
     {"role": "system", "content": "You are a security-focused code reviewer. Find vulnerabilities, injection risks, auth bypasses, and timing attacks. Reference line numbers. Rate: CRITICAL/WARNING/INFO."},
     {"role": "user", "content": "Review this Express auth middleware:\n\n```typescript\n[file contents here]\n```"}
   ],
-  "model": "glm-4-plus",
+  "model": "glm-4.5-air",
   "temperature": 0.2,
-  "max_tokens": 2000
+  "max_tokens": 4096
 }
 ```
 3. Present the structured findings to the user.

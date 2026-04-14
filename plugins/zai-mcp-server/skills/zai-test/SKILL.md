@@ -1,10 +1,10 @@
 ---
 name: zai-test
-description: This skill should be used when the user asks to "write tests", "generate tests", "add test coverage", "create unit tests", "test this function", or wants test generation delegated to Z.ai. Saves Claude tokens by offloading test writing to GLM/CodeGeeX models.
-version: 1.0.0
+description: This skill should be used when the user asks to "write tests", "generate tests", "add test coverage", "create unit tests", "test this function", or wants test generation delegated to Z.ai. Saves Claude tokens by offloading test writing to Z.ai non-reasoning models.
+version: 1.2.0
 ---
 
-You are delegating test generation to the Z.ai coding endpoint. Tests are high-volume, repetitive code — perfect for offloading to cheap non-agentic models like codegeex-4.
+You are delegating test generation to the Z.ai coding endpoint. Tests are high-volume, repetitive code — perfect for offloading to `glm-4.5-air` (non-reasoning, all tokens go to code).
 
 ## When to use
 
@@ -26,10 +26,10 @@ You are delegating test generation to the Z.ai coding endpoint. Tests are high-v
    - Any mocking patterns used in the project
 4. Call `zai_code_complete`:
    - `messages`: System message with test rules + user message with code and framework info
-   - `model`: `"codegeex-4"` for standard tests, `"glm-4-plus"` for complex logic with many edge cases
+   - `model`: `"glm-4.5-air"` (non-reasoning, cheapest, all tokens = test code)
    - `language`: The programming language
    - `temperature`: `0.3`
-   - `max_tokens`: `3000` (tests are verbose)
+   - `max_tokens`: `4096` (tests are verbose — never go below 2000)
 5. Write the test file to the correct location (matching project convention: `__tests__/`, `*.test.*`, `*.spec.*`, `_test.go`, etc.)
 6. Run the tests to verify they pass. If they fail, read the error and fix with a targeted Edit — do NOT regenerate the entire test file.
 
@@ -51,10 +51,8 @@ Rules:
 
 | Scenario | Model | Why |
 |----------|-------|-----|
-| Unit tests for pure functions | `codegeex-4` | Simple, repetitive — cheapest |
-| Tests with complex mocking | `glm-4-plus` | Needs reasoning about dependencies |
-| Snapshot / integration tests | `glm-4-flash` | Fast, good enough for structural tests |
-| Property-based / fuzz tests | `glm-4-plus` | Needs to reason about invariants |
+| All test generation (default) | `glm-4.5-air` | Non-reasoning, cheap, all output = code |
+| Tests needing complex reasoning about invariants | `glm-4.5` | Reasoning helps with edge case discovery |
 
 ## Example
 
@@ -69,10 +67,10 @@ User: "Write tests for this utility"
     {"role": "system", "content": "Write comprehensive vitest tests. Use describe/it/expect. Cover happy path, edge cases, timing. Use vi.useFakeTimers(). Output only code."},
     {"role": "user", "content": "Write tests for:\n\n```typescript\nexport function debounce<T extends (...args: any[]) => any>(fn: T, ms: number): (...args: Parameters<T>) => void {\n  let timer: ReturnType<typeof setTimeout>;\n  return (...args) => {\n    clearTimeout(timer);\n    timer = setTimeout(() => fn(...args), ms);\n  };\n}\n```\n\nTest file location: src/utils/__tests__/debounce.test.ts\nImport: import { debounce } from '../debounce';"}
   ],
-  "model": "codegeex-4",
+  "model": "glm-4.5-air",
   "language": "typescript",
   "temperature": 0.3,
-  "max_tokens": 2000
+  "max_tokens": 4096
 }
 ```
 4. Write result to `src/utils/__tests__/debounce.test.ts`

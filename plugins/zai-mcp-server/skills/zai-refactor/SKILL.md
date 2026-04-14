@@ -1,10 +1,10 @@
 ---
 name: zai-refactor
-description: This skill should be used when the user asks to "refactor this", "clean up this code", "simplify", "optimize", "improve code quality", "make this more readable", or wants code refactoring delegated to Z.ai. Saves Claude tokens by offloading refactoring to GLM models.
-version: 1.0.0
+description: This skill should be used when the user asks to "refactor this", "clean up this code", "simplify", "optimize", "improve code quality", "make this more readable", or wants code refactoring delegated to Z.ai. Saves Claude tokens by offloading refactoring to Z.ai models.
+version: 1.2.0
 ---
 
-You are delegating code refactoring to the Z.ai coding endpoint. Use glm-4-plus for quality refactoring output without burning Claude tokens on rewriting code.
+You are delegating code refactoring to the Z.ai coding endpoint. Use `glm-4.5-air` for straightforward cleanups or `glm-4.5` for complex restructuring.
 
 ## When to use
 
@@ -22,10 +22,10 @@ You are delegating code refactoring to the Z.ai coding endpoint. Use glm-4-plus 
    - Keep the same exports/interfaces
 3. Call `zai_code_complete`:
    - `messages`: System message with refactoring rules + user message with the code and what to improve
-   - `model`: `"glm-4-plus"` (needs good reasoning for safe refactoring)
+   - `model`: `"glm-4.5-air"` for simple cleanups, `"glm-4.5"` for complex restructuring
    - `language`: The programming language
    - `temperature`: `0.2` (conservative — refactoring should be predictable)
-   - `max_tokens`: At least as many tokens as the original code, plus 50% headroom
+   - `max_tokens`: At least as many tokens as the original code, plus 50% headroom. **Minimum 2000.**
 4. Diff the original and refactored code mentally. Verify:
    - Same exports / public API
    - No logic changes unless explicitly requested
@@ -55,10 +55,10 @@ User: "Refactor this to reduce duplication"
     {"role": "system", "content": "Refactor this code to reduce duplication. Preserve behavior and public API. Output only code."},
     {"role": "user", "content": "Refactor this TypeScript module:\n\n```typescript\n[original code here]\n```"}
   ],
-  "model": "glm-4-plus",
+  "model": "glm-4.5-air",
   "language": "typescript",
   "temperature": 0.2,
-  "max_tokens": 3000
+  "max_tokens": 4096
 }
 ```
 

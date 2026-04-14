@@ -66,11 +66,11 @@ Skills are invoked with `/zai-mcp-server:<skill>` or triggered automatically whe
 
 | Skill | Trigger | Model Used |
 |-------|---------|------------|
-| `zai-generate` | "generate code", "write a function", "implement this" | `codegeex-4` / `glm-4-plus` |
-| `zai-review` | "review code", "find bugs", "audit this" | `glm-4-plus` |
-| `zai-explain` | "explain this code", "what does this do" | `glm-4-flash` / `glm-4-plus` |
-| `zai-refactor` | "refactor this", "clean up", "simplify" | `glm-4-plus` |
-| `zai-test` | "write tests", "add test coverage" | `codegeex-4` / `glm-4-plus` |
+| `zai-generate` | "generate code", "write a function", "implement this" | `glm-4.5-air` (default) / `glm-5-turbo` (complex) |
+| `zai-review` | "review code", "find bugs", "audit this" | `glm-4.5-air` / `glm-5-turbo` |
+| `zai-explain` | "explain this code", "what does this do" | `glm-4.5-air` |
+| `zai-refactor` | "refactor this", "clean up", "simplify" | `glm-4.5-air` / `glm-4.5` |
+| `zai-test` | "write tests", "add test coverage" | `glm-4.5-air` |
 
 ### How skills save tokens
 
@@ -83,14 +83,14 @@ Instead of Claude generating code in its response (expensive), skills instruct C
 
 | Agent | Purpose | Model |
 |-------|---------|-------|
-| `zai-coder` | End-to-end feature implementation. Claude plans, Z.ai writes all code. | sonnet (orchestrator) + glm-4-plus/codegeex-4 (code) |
-| `zai-reviewer` | Code review and security audit. Reads locally, analyzes via Z.ai. | haiku (orchestrator) + glm-4-plus (analysis) |
+| `zai-coder` | End-to-end feature implementation. Claude plans, Z.ai writes all code. | sonnet (orchestrator) + glm-4.5-air/glm-5-turbo (code) |
+| `zai-reviewer` | Code review and security audit. Reads locally, analyzes via Z.ai. | haiku (orchestrator) + glm-4.5-air/glm-5-turbo (analysis) |
 
 ### zai-coder agent
 
 Use for substantial coding tasks — multi-file features, scaffolding, migrations. The agent:
 - Reads and understands the codebase (using Claude)
-- Generates ALL code via `zai_code_complete` (using Z.ai GLM/CodeGeeX)
+- Generates ALL code via `zai_code_complete` (using Z.ai glm-4.5-air or glm-5-turbo)
 - Applies and verifies the results
 - Never writes code in its own response
 
@@ -103,17 +103,21 @@ Use for code review, PR review, security audit. The agent:
 
 ## Model Selection Guide
 
-All models are **non-agentic** — no chain-of-thought overhead, no tool-use loops, just fast completion.
+Models available from Z.ai API (tested with live key):
 
-| Model | Best for | Cost | Speed |
-|-------|----------|------|-------|
-| `codegeex-4` | Code generation, tests, boilerplate | Cheapest | Fast |
-| `glm-4-flash` | Quick explanations, one-liners, small edits | Very cheap | Fastest |
-| `glm-4-air` | General tasks, balanced quality/cost | Cheap | Fast |
-| `glm-4-plus` | Complex logic, review, refactoring, architecture | Moderate | Medium |
-| `glm-4-long` | Large file generation, long context | Cheap | Medium |
+| Model | Type | Best for | Token behavior |
+|-------|------|----------|----------------|
+| `glm-4.5-air` | **Non-reasoning** | All general tasks, code gen, tests, review | All output tokens = content. Cheapest. |
+| `glm-5-turbo` | Reasoning | Complex logic, algorithms, deep analysis | ~80% tokens = reasoning overhead. Set max_tokens >= 2000. |
+| `glm-4.5` | Reasoning | Quality code, alternative to glm-5-turbo | ~50% tokens = reasoning. |
+| `glm-4.6` | Reasoning | General purpose | Reasoning overhead varies. |
+| `glm-4.7` | Reasoning | General purpose | Reasoning overhead varies. |
+| `glm-5` | Reasoning | Advanced tasks | High reasoning overhead. |
+| `glm-5.1` | Reasoning | Most capable | ~95% tokens = reasoning. Very expensive per visible token. |
 
-Default model: `glm-4-plus`. Override per-call or globally via `zai_set_config`.
+**Default model: `glm-4.5-air`** — non-reasoning, every token goes to actual output. Override per-call or globally via `zai_set_config`.
+
+> **Important**: Reasoning models need `max_tokens >= 2000` even for short outputs. They spend most tokens on internal chain-of-thought that isn't visible in the response.
 
 ## Tool Details
 
@@ -127,7 +131,7 @@ Send a chat completion request to Z.ai.
     { "role": "system", "content": "You are a helpful assistant." },
     { "role": "user", "content": "Explain closures in JavaScript." }
   ],
-  "model": "glm-4-plus",
+  "model": "glm-4.5-air",
   "temperature": 0.7,
   "max_tokens": 2048
 }
@@ -143,7 +147,7 @@ Optimized for code generation. Uses Z.ai's dedicated coding endpoint (`/api/codi
     { "role": "user", "content": "Write a binary search function" }
   ],
   "language": "typescript",
-  "model": "glm-4-plus"
+  "model": "glm-4.5-air"
 }
 ```
 
@@ -162,7 +166,7 @@ Update any combination of runtime settings without restarting the server:
 ```json
 {
   "api_key": "new-key",
-  "default_model": "glm-4-flash",
+  "default_model": "glm-5-turbo",
   "temperature": 0.5,
   "max_tokens": 8192
 }
@@ -174,7 +178,7 @@ Estimate the cost before making a call:
 
 ```json
 {
-  "model": "glm-4-plus",
+  "model": "glm-4.5-air",
   "input_tokens": 1000,
   "output_tokens": 500
 }

@@ -13,7 +13,7 @@ const ZAI_BASE_URL = "https://api.z.ai/api/paas/v4";
 const ZAI_CODING_BASE_URL = "https://api.z.ai/api/coding/paas/v4";
 const config = {
     apiKey: process.env.ZAI_API_KEY ?? "",
-    defaultModel: "glm-4-plus",
+    defaultModel: "glm-4.5-air",
     temperature: 0.7,
     maxTokens: 4096,
 };
@@ -25,21 +25,15 @@ function getClient(baseURL = ZAI_BASE_URL) {
 }
 // ── Pricing table (USD per 1K tokens) ───────────────────────────────────────
 const PRICING = {
-    // GLM models (non-agentic, token-efficient)
-    "glm-4-plus": { input: 0.0005, output: 0.0005 },
-    "glm-4-flash": { input: 0.0001, output: 0.0001 },
-    "glm-4-flashx": { input: 0.0001, output: 0.0001 },
-    "glm-4-long": { input: 0.0001, output: 0.0001 },
-    "glm-4": { input: 0.0003, output: 0.0003 },
-    "glm-4-air": { input: 0.0002, output: 0.0002 },
-    "glm-4-airx": { input: 0.0002, output: 0.0002 },
-    "glm-4-0520": { input: 0.0005, output: 0.0005 },
-    "codegeex-4": { input: 0.0001, output: 0.0001 },
-    // OpenAI-compatible models
-    "gpt-4o": { input: 0.0025, output: 0.01 },
-    "gpt-4o-mini": { input: 0.00015, output: 0.0006 },
-    "gpt-4-turbo": { input: 0.01, output: 0.03 },
-    "gpt-3.5-turbo": { input: 0.0005, output: 0.0015 },
+    // Non-reasoning (truly non-agentic, token-efficient)
+    "glm-4.5-air": { input: 0.0002, output: 0.0002 },
+    // Reasoning models (use more tokens internally)
+    "glm-4.5": { input: 0.0005, output: 0.0005 },
+    "glm-4.6": { input: 0.0005, output: 0.0005 },
+    "glm-4.7": { input: 0.0008, output: 0.0008 },
+    "glm-5": { input: 0.001, output: 0.001 },
+    "glm-5-turbo": { input: 0.0008, output: 0.0008 },
+    "glm-5.1": { input: 0.001, output: 0.001 },
 };
 // ── Shared Zod shapes ───────────────────────────────────────────────────────
 const MessageSchema = zod_1.z.object({
@@ -49,7 +43,7 @@ const MessageSchema = zod_1.z.object({
 // ── MCP Server ──────────────────────────────────────────────────────────────
 const server = new mcp_js_1.McpServer({
     name: "zai-mcp-server",
-    version: "1.1.0",
+    version: "1.2.0",
 });
 // ── Tool 1: zai_chat_complete ───────────────────────────────────────────────
 server.tool("zai_chat_complete", "Send a chat completion request to Z.ai API. Returns the model's response.", {
