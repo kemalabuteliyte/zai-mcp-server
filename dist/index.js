@@ -43,7 +43,7 @@ const MessageSchema = zod_1.z.object({
 // ── MCP Server ──────────────────────────────────────────────────────────────
 const server = new mcp_js_1.McpServer({
     name: "zai-mcp-server",
-    version: "1.2.0",
+    version: "1.3.0",
 });
 // ── Tool 1: zai_chat_complete ───────────────────────────────────────────────
 server.tool("zai_chat_complete", "Send a chat completion request to Z.ai API. Returns the model's response.", {

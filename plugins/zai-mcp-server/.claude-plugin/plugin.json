@@ -1,7 +1,7 @@
 {
   "name": "zai-mcp-server",
-  "version": "1.2.0",
-  "description": "Token-efficient coding plugin for Claude. Delegates code generation, review, testing, and refactoring to Z.ai non-agentic models (GLM-4, CodeGeeX) via MCP, saving Claude tokens on heavy code tasks.",
+  "version": "1.3.0",
+  "description": "Token-efficient parallel coding plugin for Claude. Delegates and parallelizes code generation, review, testing, and refactoring to Z.ai GLM models via MCP — saves Claude tokens and wall-clock time on agentic jobs.",
   "author": {
     "name": "kemalabuteliyte",
     "url": "https://github.com/kemalabuteliyte"
@@ -9,7 +9,8 @@
   "homepage": "https://github.com/kemalabuteliyte/zai-mcp-server",
   "repository": "https://github.com/kemalabuteliyte/zai-mcp-server",
   "license": "ISC",
-  "keywords": ["mcp", "zai", "glm", "codegeex", "code-generation", "token-efficient"],
+  "keywords": ["mcp", "zai", "glm", "codegeex", "code-generation", "token-efficient", "parallel-agents"],
+  "hooks": "./hooks/hooks.json",
   "mcpServers": {
     "zai-mcp-server": {
       "command": "npx",

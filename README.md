@@ -9,7 +9,9 @@ Claude is great at reasoning but expensive when writing large amounts of code. T
 - **Save tokens** — Code generation, test writing, and boilerplate go to cheap GLM/CodeGeeX models instead of consuming Claude context
 - **Non-agentic models only** — Uses glm-4-plus, glm-4-flash, codegeex-4 — fast, cheap, no reasoning overhead
 - **Claude stays in control** — Claude reads, plans, and orchestrates; Z.ai writes the code
-- **5 skills + 2 agents** — Ready-to-use workflows for generate, review, explain, refactor, and test
+- **Parallel agentic delegation** — Orchestrator fans out independent units to multiple GLM workers concurrently, cutting wall-clock time
+- **Auto-routing hooks** — Session-start guidance + prompt router that nudges Claude toward delegation when it detects heavy code-gen verbs
+- **7 skills + 3 agents** — Ready-to-use workflows for generate, review, explain, refactor, test, delegate, and parallel orchestration
 
 ## Install as Claude Code Plugin (Marketplace)
 
@@ -71,6 +73,8 @@ Skills are invoked with `/zai-mcp-server:<skill>` or triggered automatically whe
 | `zai-explain` | "explain this code", "what does this do" | `glm-4.5-air` |
 | `zai-refactor` | "refactor this", "clean up", "simplify" | `glm-4.5-air` / `glm-4.5` |
 | `zai-test` | "write tests", "add test coverage" | `glm-4.5-air` |
+| `zai-delegate` | "delegate this", "send to GLM", "save tokens on this" | `glm-4.5-air` |
+| `zai-parallel-tasks` | "build in parallel", "fan out", "do these concurrently" | `glm-4.5-air` × N concurrent |
 
 ### How skills save tokens
 
@@ -85,6 +89,7 @@ Instead of Claude generating code in its response (expensive), skills instruct C
 |-------|---------|-------|
 | `zai-coder` | End-to-end feature implementation. Claude plans, Z.ai writes all code. | sonnet (orchestrator) + glm-4.5-air/glm-5-turbo (code) |
 | `zai-reviewer` | Code review and security audit. Reads locally, analyzes via Z.ai. | haiku (orchestrator) + glm-4.5-air/glm-5-turbo (analysis) |
+| `zai-orchestrator` | Decomposes multi-file features into independent units and dispatches them in parallel to GLM workers. | sonnet (conductor) + N × glm-4.5-air (parallel workers) |
 
 ### zai-coder agent
 
@@ -100,6 +105,27 @@ Use for code review, PR review, security audit. The agent:
 - Gathers diffs and reads changed files locally
 - Sends code to `zai_chat_complete` with a structured review prompt
 - Presents findings sorted by severity (CRITICAL > WARNING > INFO)
+
+### zai-orchestrator agent
+
+Use for any feature that decomposes into independent units across multiple files. The agent:
+- Reads the codebase, splits the request into independent subtasks
+- Generates any shared dependency once (e.g. types), then dispatches the rest as a single parallel batch of `zai_code_complete` calls
+- Writes results, runs typecheck/tests once, and dispatches a parallel fix-batch if anything fails
+- Wall-clock time becomes `max(unit)` instead of `sum(units)` — typically 3–5× faster than sequential
+
+> Example: "Use the zai-orchestrator agent to scaffold a User CRUD API — model, repository, controller, routes, and tests in parallel."
+
+## Hooks
+
+The plugin ships two hooks that activate automatically when installed:
+
+| Hook | Event | Behavior |
+|------|-------|----------|
+| `session-start.sh` | `SessionStart` | Verifies `ZAI_API_KEY` is configured and injects a one-paragraph reminder of available delegation paths |
+| `user-prompt-router.sh` | `UserPromptSubmit` | Detects heavy-codegen verbs ("scaffold", "in parallel", "write tests", "review", "refactor", etc.) and injects a hint pointing Claude at the matching `zai-*` skill or agent |
+
+Hooks are non-blocking — they only add context. Disable them by removing `"hooks": "./hooks/hooks.json"` from `plugin.json`.
 
 ## Model Selection Guide
 
@@ -191,11 +217,13 @@ Returns a breakdown of input/output/total cost in USD.
 Once installed, Claude automatically uses Z.ai via skills and agents:
 
 ```
-/zai-mcp-server:zai-generate  → "Write a REST API for user management in Express"
-/zai-mcp-server:zai-review    → "Review src/auth.ts for security issues"
-/zai-mcp-server:zai-test      → "Write tests for the UserService class"
-/zai-mcp-server:zai-refactor  → "Refactor this to reduce duplication"
-/zai-mcp-server:zai-explain   → "Explain how the caching layer works"
+/zai-mcp-server:zai-generate        → "Write a REST API for user management in Express"
+/zai-mcp-server:zai-review          → "Review src/auth.ts for security issues"
+/zai-mcp-server:zai-test            → "Write tests for the UserService class"
+/zai-mcp-server:zai-refactor        → "Refactor this to reduce duplication"
+/zai-mcp-server:zai-explain         → "Explain how the caching layer works"
+/zai-mcp-server:zai-delegate        → "Delegate this to GLM — summarize the last 200 log lines"
+/zai-mcp-server:zai-parallel-tasks  → "Scaffold these 6 components in parallel"
 ```
 
 Or use agents for larger tasks:
@@ -203,6 +231,8 @@ Or use agents for larger tasks:
 > "Use the zai-coder agent to implement a full CRUD API for products with validation and tests."
 
 > "Use the zai-reviewer agent to review all changes on this branch."
+
+> "Use the zai-orchestrator agent to scaffold these 8 React components in parallel from the Figma spec."
 
 Skills also trigger automatically when Claude detects matching requests — no slash command needed.
 
