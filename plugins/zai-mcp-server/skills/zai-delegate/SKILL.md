@@ -1,8 +1,10 @@
 ---
 name: zai-delegate
 description: This skill should be used when the user explicitly asks to "delegate this to GLM", "send this to Z.ai", "use the cheap model", "save tokens on this", or any general-purpose handoff to a Z.ai model that doesn't fit the more specific zai-generate / zai-review / zai-test / zai-refactor / zai-explain skills. The escape hatch for arbitrary delegation.
-version: 1.3.0
+version: 1.3.1
 ---
+
+> **Environment note**: Steps that read files (Bash/Read) or write results (Edit/Write) require Claude Code CLI. In Claude Desktop, paste the relevant content into your prompt and the GLM output will be shown as text — file writes are skipped.
 
 You are the general-purpose delegation entry point for Z.ai. Use this skill when the user wants Claude to offload a task to a cheaper GLM model but the task does not match a more specific skill (generate, review, test, refactor, explain).
 
@@ -34,7 +36,8 @@ If the task is clearly code generation → use `zai-generate`. Code review → `
    - `max_tokens`: `2000` minimum — never below `1000`
 
 5. **Apply the result:**
-   - If the output is code → write to file with Edit/Write
+   - If the output is code AND file tools are available (Claude Code CLI) → write to file with Edit/Write
+   - If file tools are unavailable (Claude Desktop) → output as a labeled fenced code block
    - If prose → present to user verbatim, no rewrap
 
 6. **Estimate cost on request.** If the user asks "how much did that cost?", call `zai_estimate_cost` with the `usage` block returned by the previous call.

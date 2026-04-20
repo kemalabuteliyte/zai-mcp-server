@@ -1,8 +1,10 @@
 ---
 name: zai-parallel-tasks
 description: This skill should be used when the user asks to "build a feature in parallel", "implement multiple files at once", "scaffold these in parallel", "fan out", "do these concurrently", or any task that decomposes into independent code units. Saves wall-clock time AND Claude tokens by dispatching multiple `zai_code_complete` calls concurrently to GLM models.
-version: 1.3.0
+version: 1.3.1
 ---
+
+> **Environment note**: Full functionality (auto-writing files, running typechecks) requires Claude Code CLI. In Claude Desktop or other environments without file-system tools, this skill still runs the parallel GLM generation phase and outputs each result as a labeled code block for you to copy.
 
 You are coordinating parallel code generation across multiple Z.ai GLM workers. Your job is to split a feature into independent units, dispatch them concurrently in a single tool-call batch, then stitch the results back into the codebase. You NEVER write the code yourself.
 
@@ -41,11 +43,14 @@ For each call:
 
 ### 3. Apply
 
-After all calls return, write each result to its target file with Edit/Write. Do this in parallel too where possible.
+After all calls return:
+- **Claude Code CLI**: write each result to its target file using Edit/Write in parallel.
+- **Claude Desktop / no file tools**: output each result as a labeled fenced code block (`// FILE: <path>`) so the user can copy-paste or save manually.
 
 ### 4. Verify
 
-Run the project's typecheck/build/test command once across all changes. If failures, dispatch a second parallel batch of fix calls — do NOT hand-fix.
+- **Claude Code CLI**: run the project's typecheck/build/test command once. If failures, dispatch a second parallel batch of fix calls — do NOT hand-fix.
+- **Claude Desktop**: skip this step and note that the user should run their own typecheck after saving the files.
 
 ## Cost & speed notes
 
